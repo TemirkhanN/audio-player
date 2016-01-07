@@ -1,0 +1,28 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="./audio.player.min.js"></script>
+    <title>Test audio playing</title>
+</head>
+<script>
+    var playerInstance;
+
+    function letsDance(audioLink) {
+        if(audioLink.length < 10){
+            console.log('error');
+            return;
+        }
+
+        if(playerInstance instanceof AudioPlayer) {
+            playerInstance.deleteInstance();
+        }
+
+        playerInstance = new AudioPlayer(audioLink);
+    }
+</script>
+<body>
+
+<a class="playback" onclick='letsDance("https://cs1-39v4.vk-cdn.net/p1/a8efc398072719.mp3")' href="#">Schubert</a>
+
+</body>
+</html>
