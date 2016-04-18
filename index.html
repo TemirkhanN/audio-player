@@ -5,7 +5,7 @@
     <title>Test audio playing</title>
 </head>
 <script>
-    var playerInstance;
+    var greetingsAudioplayer;
 
     function letsDance(audioLink) {
         if(audioLink.length < 10){
@@ -13,11 +13,11 @@
             return;
         }
 
-        if(playerInstance instanceof AudioPlayer) {
-            playerInstance.deleteInstance();
+        if(greetingsAudioplayer instanceof AudioPlayer){
+            greetingsAudioplayer.setAudioSource(audioLink);
+        } else{
+            greetingsAudioplayer = new AudioPlayer(audioLink);
         }
-
-        playerInstance = new AudioPlayer(audioLink);
     }
 </script>
 <body>

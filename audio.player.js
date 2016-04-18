@@ -9,7 +9,7 @@ function AudioPlayer(sourceLink) {
      * @type {Audio}
      * @private
      */
-    var player    = new Audio(sourceLink);
+    var player;
 
     var isSeeking, isChangingVolume = false;
 
@@ -122,26 +122,13 @@ function AudioPlayer(sourceLink) {
         }
     };
 
+    /**
+     * Player controls DOM-objects
+     * @type {object}
+     */
     var controlsItems = {};
 
-    /**
-     * Initializes new instance of audio player
-     */
-    var initialize = function(){
-        player.ondurationchange = function () {
-            audioLength.full.minutes = Math.floor(player.duration / 60);
-            audioLength.full.seconds = Math.floor(player.duration % 60);
-            audioLength.current.minutes = "00";
-            audioLength.current.seconds = "00";
-
-            document.body.appendChild(createPlayerControls());
-        };
-
-
-        window.onmouseup = function(){
-            isSeeking = isChangingVolume = false;
-        };
-    };
+    var rendererInterval;
 
 
     /**
@@ -167,6 +154,38 @@ function AudioPlayer(sourceLink) {
 
 
     /**
+     * Initializes new instance of audio player
+     */
+    var initialize = function(audioLink){
+
+        player = new Audio(audioLink);
+
+        player.onloadeddata = function () {
+            audioLength.full.minutes    = timeWithLeadingZero(Math.floor(player.duration / 60));
+            audioLength.full.seconds    = timeWithLeadingZero(Math.floor(player.duration % 60));
+            audioLength.current.minutes = timeWithLeadingZero(0);
+            audioLength.current.seconds = timeWithLeadingZero(0);
+
+            //If control panel still not created
+            if(!controlsItems.hasOwnProperty("playerControls")) {
+                document.body.appendChild(createPlayerControls());
+            } else{ //Otherwise we shall refresh progress bar and timeposition
+                renderProgressBar(true);
+            }
+        };
+
+        window.onmouseup = function(){
+            isSeeking = isChangingVolume = false;
+        };
+    };
+
+
+    _this.setAudioSource = function(audioLink){
+        player.src = audioLink;
+    };
+
+
+    /**
      * Generates full player control panel
      * @returns {Element}
      */
@@ -177,7 +196,7 @@ function AudioPlayer(sourceLink) {
         player.onended = function(){
             controlsItems.play.innerHTML = controls.play.innerHTML;
             _this.seekTo(0);
-            renderProgress(true);
+            renderProgressBar(true);
         };
 
         controlsItems.playerControls.appendChild(createPlayButton());
@@ -198,13 +217,7 @@ function AudioPlayer(sourceLink) {
         controlsItems.play = fillAttributes(controlsItems.play, controls.play);
 
         controlsItems.play.onclick = function(){
-            if (_this.play()) {
-                controlsItems.play.innerHTML = "&#9208;";
-                controlsItems.play.title = "Pause";
-            } else {
-                controlsItems.play.innerHTML = controls.play.innerHTML;
-                controlsItems.play.title = controls.play.title;
-            }
+            _this.play();
         };
 
         return controlsItems.play;
@@ -234,7 +247,7 @@ function AudioPlayer(sourceLink) {
             var barFullLength = parseInt(controlsItems.progressBarBg.style.width);
             var timePosition = (e.offsetX/barFullLength) * (audioLength.full.seconds + (audioLength.full.minutes * 60));
             _this.seekTo(Math.floor(timePosition));
-            renderProgress();
+            renderProgressBar();
         };
 
         controlsItems.progressBar.onmousemove = function(e){
@@ -246,11 +259,16 @@ function AudioPlayer(sourceLink) {
         controlsItems.progressBar.appendChild(controlsItems.progressBarBg);
         controlsItems.progressBar.appendChild(controlsItems.progressBarSeeker);
 
-        setInterval(function(){renderProgress();}, 500);
+        rendererInterval = setInterval(function(){renderProgressBar();}, 500);
 
-        renderProgress(true);
+        renderProgressBar(true);
 
         return controlsItems.progressBar;
+    };
+
+
+    var timeWithLeadingZero = function(intTime){
+        return intTime < 10 ? "0" + "" + intTime : intTime;
     };
 
 
@@ -259,12 +277,12 @@ function AudioPlayer(sourceLink) {
      *
      * @param forceRender
      */
-    var renderProgress = function(forceRender){
+    var renderProgressBar = function(forceRender){
         var minutes = Math.floor(player.currentTime / 60);
         var seconds = Math.floor(player.currentTime % 60);
 
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
+        minutes = timeWithLeadingZero(minutes);
+        seconds = timeWithLeadingZero(seconds);
 
         if(!forceRender && (audioLength.current.minutes == minutes && audioLength.current.seconds == seconds)){
             return;
@@ -317,20 +335,35 @@ function AudioPlayer(sourceLink) {
     };
 
     _this.deleteInstance = function(){
-        player.pause();
+        clearInterval(rendererInterval);
+        _this.stop();
         player.src = '';
         controlsItems.playerControls.parentNode.removeChild(controlsItems.playerControls);
     };
 
     _this.play = function(){
-        player.paused ? player.play() : player.pause();
+        if (player.paused) {
+            player.play();
+            controlsItems.play.innerHTML = "&#9208;";
+            controlsItems.play.title = "Pause";
+        } else {
+            player.pause();
+            controlsItems.play.innerHTML = controls.play.innerHTML;
+            controlsItems.play.title = controls.play.title;
+        }
 
         return !player.paused;
     };
+
+    _this.stop = function () {
+        player.pause();
+        player.currentTime = 0;
+        renderProgressBar();
+    }
 
     _this.seekTo = function(timePosition){
         player.currentTime = timePosition;
     };
 
-    initialize();
+    initialize(sourceLink);
 }
