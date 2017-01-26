@@ -7,7 +7,8 @@
 <script>
     var greetingsAudioplayer;
 
-    function letsDance(audioLink) {
+    function playSound() {
+        var audioLink = document.getElementById("audio-source-link").value;
         if(audioLink.length < 10){
             console.log('error');
             return;
@@ -22,7 +23,9 @@
 </script>
 <body>
 
-<a class="playback" onclick='letsDance("https://cs1-35v4.vk-cdn.net/p19/ac163fb025a7ee.mp3")' href="#">Schubert</a>
+<input type="text" id="audio-source-link" placeholder="input any audio source link">
+
+<button class="playback" onclick='playSound()' href="#">Play</button>
 
 </body>
 </html>
